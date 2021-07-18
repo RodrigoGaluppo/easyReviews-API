@@ -16,7 +16,8 @@ module.exports = {
         "updatedAt":"updated_at"
     },
     dialectOptions:{
-        timezone:"Europe/Lisbon"
+        timezone:"Europe/Lisbon",
+        ssl: true
     },
     timezone:"Europe/Lisbon"
 
