@@ -27,7 +27,7 @@ exports.single = async (req,res,next)=>{
 
             /* resizing image */
             sharp(req.file.buffer)
-            .resize(200,200)
+            .resize(400,400)
             .toBuffer()
             .then((buffer)=>{
 
