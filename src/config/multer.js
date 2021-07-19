@@ -9,7 +9,8 @@ module.exports = {
             return cb(new multer.MulterError("file must be either PNG or JPG"))
         }
         return cb(null,true)
-    },
+    }
+    /*
     storage: multer.diskStorage({
         
         destination:(req,file,cb)=>{
@@ -20,4 +21,6 @@ module.exports = {
             cb(null, `${id}_${Date.now()}${extname(file.originalname)}`  )
         }
     })
+    */
+    
 }

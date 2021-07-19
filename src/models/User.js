@@ -51,7 +51,7 @@ module.exports = class User extends Model {
         type:Sequelize.VIRTUAL,
         get()
         {
-          return `${appConfig.localUrl}/${this.getDataValue("profile_img")}`
+          return `${appConfig.uploadUrl}${this.getDataValue("profile_img")}`
         }
       }
     }, {

@@ -5,6 +5,7 @@ const CompanyModel = require("../models/Company")
 const UserModel = require("../models/User")
 const sharp = require("sharp")
 const {resolve} = require("path")
+const aws = require("aws-sdk")
 
 const Op = Sequelize.Op
 
@@ -393,6 +394,27 @@ exports.upload = async (req,res)=> {
 
         if(company)
         {
+
+            const s3 = new aws.S3({
+                region:"eu-west-2",
+                accessKeyId:process.env.UPLOAD_AWS_KEY,
+                secretAccessKey:process.env.UPLOAD_AWS_PASS
+            })
+    
+            try
+            {
+                await s3.deleteObject({
+                    Bucket:"app-avaliame",
+                    Key:company.img_name
+                }).promise()
+            }
+            catch(err)
+            {
+                console.log(err);
+                return res.status(500).json({message:"could not upload file"})
+            }
+
+
             company.update({
                 img_name:fileName
             })
@@ -409,23 +431,12 @@ exports.upload = async (req,res)=> {
                 }
             }
             
-            try{
-                
-                await sharp(req.file.path)
-                .resize(200,200,{fit:"contain"})
-                .toFile("test.jpeg")
-            }
-            catch(e)
-            {
-                console.log(e);
-            }
-
             return res.json({
                 company:{
                     name:company.name,
                     city:company.city,
                     country:company.country,
-                    img_name:fileName,
+                    img_url:company.img_url,
                     description:company.description
                 }
             })

@@ -14,6 +14,7 @@ app.use(bodyparser.json())
 app.use(cors())
 app.use(express.static(resolve(__dirname,"uploads")))
 
+
 app.use("/",router)
 
 app.listen(process.env.PORT || 3333,(req,res)=>{

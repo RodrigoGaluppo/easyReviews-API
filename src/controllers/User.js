@@ -4,7 +4,7 @@ const verify = require("jsonwebtoken").verify
 const bcrypt = require("bcryptjs")
 const jwt = require("jsonwebtoken")
 require("dotenv/config")
-
+const aws = require("aws-sdk")
 const salt = bcrypt.genSaltSync(5)
 const JWTSECRET = process.env.JWTSECRET
 
@@ -204,33 +204,14 @@ exports.upload = async (req,res)=> {
     
     const fileName = req.file.filename
 
+    console.log(req.file);
+
     const {id} = req.user
 
+    let user
+
     try{
-        const user = await UserModel.findByPk(id)
-
-        if(user)
-        {
-            user.update({
-                profile_img:fileName
-            })
-            await user.save()
-
-            return res.json({
-                user:{
-                    id,
-                    username:user.name,
-                    email:user.email,
-                    img_url:user.img_url
-                }
-            })
-        }
-        
-        else{
-            return res.status(400).json({
-                message:"user does not exist"
-            })
-        }
+        user = await UserModel.findByPk(id)
 
     }
 
@@ -242,6 +223,51 @@ exports.upload = async (req,res)=> {
         })
     }
 
+    if(user)
+    {
+
+        const s3 = new aws.S3({
+            region:"eu-west-2",
+            accessKeyId:process.env.UPLOAD_AWS_KEY,
+            secretAccessKey:process.env.UPLOAD_AWS_PASS
+        })
+
+        try
+        {
+            await s3.deleteObject({
+                Bucket:"app-avaliame",
+                Key:user.profile_img
+            }).promise()
+        }
+        catch(err)
+        {
+            console.log(err);
+            return res.status(500).json({message:"could not upload file"})
+        }
+
+        await user.update({
+            profile_img:fileName
+        })
+        
+        await user.save()
+
+        return res.json({
+            user:{
+                id,
+                username:user.name,
+                email:user.email,
+                img_url:user.img_url
+            }
+        })
+
+       
+    }
+    
+    else{
+        return res.status(400).json({
+            message:"user does not exist"
+        })
+    }
 
     return res.json(fileName)
 

@@ -67,7 +67,7 @@ module.exports = class Company extends Model {
       {
         type:Sequelize.VIRTUAL,
         get(){
-          return `${appConfig.localUrl}/${this.getDataValue("img_name")}`
+          return `${appConfig.uploadUrl}${this.getDataValue("img_name")}`
         }
       }
     }, {
