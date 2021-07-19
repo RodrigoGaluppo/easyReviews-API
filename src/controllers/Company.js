@@ -401,20 +401,22 @@ exports.upload = async (req,res)=> {
                 secretAccessKey:process.env.UPLOAD_AWS_PASS
             })
     
-            try
+            if(company.img_name !== "company.jpg")
             {
-                await s3.deleteObject({
-                    Bucket:"app-avaliame",
-                    Key:company.img_name
-                }).promise()
+                try
+                {
+                    await s3.deleteObject({
+                        Bucket:"app-avaliame",
+                        Key:company.img_name
+                    }).promise()
+                }
+                catch(err)
+                {
+                    console.log(err);
+                    return res.status(500).json({message:"could not upload file"})
+                }
             }
-            catch(err)
-            {
-                console.log(err);
-                return res.status(500).json({message:"could not upload file"})
-            }
-
-
+            
             company.update({
                 img_name:fileName
             })

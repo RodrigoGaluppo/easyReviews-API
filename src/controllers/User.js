@@ -232,17 +232,20 @@ exports.upload = async (req,res)=> {
             secretAccessKey:process.env.UPLOAD_AWS_PASS
         })
 
-        try
+        if(user.profile_img !== "user.png")
         {
-            await s3.deleteObject({
-                Bucket:"app-avaliame",
-                Key:user.profile_img
-            }).promise()
-        }
-        catch(err)
-        {
-            console.log(err);
-            return res.status(500).json({message:"could not upload file"})
+            try
+            {
+                await s3.deleteObject({
+                    Bucket:"app-avaliame",
+                    Key:user.profile_img
+                }).promise()
+            }
+            catch(err)
+            {
+                console.log(err);
+                return res.status(500).json({message:"could not upload file"})
+            }
         }
 
         await user.update({

@@ -45,12 +45,12 @@ exports.single = async (req,res,next)=>{
                     next()
                 })
                 .catch((err)=>{
-                    console.log(err);
+                    
                     return res.status(500).json({message:"could not upload file"})
                 })
             })
             .catch((err)=>{
-                console.log(err);
+                
                 return res.status(500).json({message:"could not upload file"})
             })
             
