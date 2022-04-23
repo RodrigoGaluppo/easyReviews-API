@@ -2,8 +2,8 @@ const multer = require("multer")
 const multerConfig = require("../config/multer")
 const upload = multer(multerConfig)
 const sharp = require("sharp")
-const aws = require("aws-sdk")
-const { extname,resolve } = require("path")
+const { extname } = require("path")
+const { S3 } = require("../services/aws")
 
 exports.single = async (req,res,next)=>{
     const uploadSingle = upload.single("profile_img")
@@ -17,12 +17,7 @@ exports.single = async (req,res,next)=>{
         }
         else
         {
-            const s3 = new aws.S3({
-                region:"eu-west-2",
-                accessKeyId:process.env.UPLOAD_AWS_KEY,
-                secretAccessKey:process.env.UPLOAD_AWS_PASS
-            })
-
+    
             const fileName = `${req.user.id}_${Date.now()}${extname(req.file.originalname)}`
 
             /* resizing image */
@@ -32,25 +27,26 @@ exports.single = async (req,res,next)=>{
             .then((buffer)=>{
 
                 /* saving in CDN */
-                s3.putObject({
+                S3.putObject({
                     Bucket:"app-avaliame",
                     Key:fileName,
                     ACL:"public-read",
                     Body:buffer
                 }).promise()
+
                 .then(()=>{
     
                     req.file.filename = fileName
     
                     next()
                 })
-                .catch((err)=>{
+                .catch(()=>{
                     
                     return res.status(500).json({message:"could not upload file"})
                 })
             })
             .catch((err)=>{
-                
+                console.log(err);
                 return res.status(500).json({message:"could not upload file"})
             })
             

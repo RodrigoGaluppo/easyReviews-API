@@ -32,8 +32,8 @@ router.post("/company/upload",UserController.auth,UploadController.single,Compan
 
 /* non required login  routes */
 router.get("/reviews:/company_id",CompanyController.list)
-router.get("/companies/:country/:page/:name",CompanyController.list)
-router.get("/companies/:country/:page/",CompanyController.list)
+router.get("/companies/:page/:name",CompanyController.list)
+router.get("/companies/:page/",CompanyController.list)
 router.get("/company/:company_id",CompanyController.get)
 
 module.exports = router

@@ -1,12 +1,11 @@
 const UserModel = require("../models/User")
-const next = require("express")
 const verify = require("jsonwebtoken").verify
 const bcrypt = require("bcryptjs")
 const jwt = require("jsonwebtoken")
-require("dotenv/config")
-const aws = require("aws-sdk")
+const { S3 } = require("../services/aws")
 const salt = bcrypt.genSaltSync(5)
 const JWTSECRET = process.env.JWTSECRET
+require("dotenv/config")
 
 exports.auth = async (req,res,next)=>{
     
@@ -46,42 +45,41 @@ exports.login =  async (req,res)=>{
     const {email,password} = req.body
     const user = await UserModel.findOne({where:{email}})
 
-    if(user){
-
-    
-        if(bcrypt.compareSync(password,user.password)){
-            
-            if(JWTSECRET){
-                jwt.sign({user_id:user.id},JWTSECRET,{subject:user.id,expiresIn:"2d"},(err,token)=>{
-                    if(err){
-                        res.status(500)
-                        return res.json({message:"internal error"}).status(500)
-                    }
-                    
-                    const userObj = {
-                        id:user.id,
-                        username:user.name,
-                        email:user.email,
-                        img_url:user.img_url
-                    }
-
-                    return res.json({token,user:userObj})
-                })
-                
-            }else{
-                res.status(500)
-                return res.json({message:"internalError"})
-            }
-            
-        }else{
-            res.status(404)
-            return res.json({message:"invalid Credentials"})
-        }
-        
-    }else{
+    if(!user)
+    {
         res.status(401)
         return res.json({message:"user not found"})
-    } 
+    }
+
+    if(!bcrypt.compareSync(password,user.password))
+    {
+        res.status(404)
+        return res.json({message:"invalid Credentials"})
+    }
+            
+    if(!JWTSECRET)
+    {
+        res.status(500)
+        return res.json({message:"internalError"})
+    }
+        
+    jwt.sign({user_id:user.id},JWTSECRET,{subject:user.id,expiresIn:"2d"},
+    (err,token)=>{
+
+        if(err){
+            res.status(500)
+            return res.json({message:"internal error"}).status(500)
+        }
+        
+        const userObj = {
+            id:user.id,
+            username:user.name,
+            email:user.email,
+            img_url:user.img_url
+        }
+
+        return res.json({token,user:userObj})
+    })
 }
 
 exports.update = async (req,res)=>{
@@ -140,14 +138,14 @@ exports.delete = async (req,res)=>{
 }
 
 exports.create = async (req,res)=>{
-    const {name,email,password,user_type} = req.body
+    const {name,email,password} = req.body
     
     // making sure that the usertype is only 0 or 1
-    if(!!user_type && !(user_type >= 0 && user_type <= 1))
+    /*if(!!user_type && !(user_type >= 0 && user_type <= 1))
     {
         res.status(400)
         return res.json({message:"user type can be only 0 or 1"})
-    }
+    }*/
 
     // verify wheter user exists or not
     try{
@@ -162,6 +160,7 @@ exports.create = async (req,res)=>{
     }
     catch(e)
     {
+        console.log(e);
         return res.status(500).json({
             message:"internal server error"
         })
@@ -169,6 +168,7 @@ exports.create = async (req,res)=>{
 
     // insert new user
     bcrypt.hash(password,salt, async function(err,hash){
+
         if(err){
             res.status(400)
             return res.json({message:"an error ocurred"})
@@ -178,7 +178,7 @@ exports.create = async (req,res)=>{
             name:name,
             email:email,
             password:hash,
-            user_type: !!user_type ? user_type : 0,
+            user_type: 0,
             profile_img:"user.png"
         })
         .then((user)=>{
@@ -204,8 +204,6 @@ exports.upload = async (req,res)=> {
     
     const fileName = req.file.filename
 
-    console.log(req.file);
-
     const {id} = req.user
 
     let user
@@ -226,17 +224,12 @@ exports.upload = async (req,res)=> {
     if(user)
     {
 
-        const s3 = new aws.S3({
-            region:"eu-west-2",
-            accessKeyId:process.env.UPLOAD_AWS_KEY,
-            secretAccessKey:process.env.UPLOAD_AWS_PASS
-        })
-
+        
         if(user.profile_img !== "user.png")
         {
             try
             {
-                await s3.deleteObject({
+                await S3.deleteObject({
                     Bucket:"app-avaliame",
                     Key:user.profile_img
                 }).promise()

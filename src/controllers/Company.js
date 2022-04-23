@@ -1,12 +1,8 @@
-const multer = require("multer")
 const Sequelize = require("sequelize")
 const ReviewModel = require("../models/Review")
 const CompanyModel = require("../models/Company")
 const UserModel = require("../models/User")
-const sharp = require("sharp")
-const {resolve} = require("path")
-const aws = require("aws-sdk")
-
+const { S3 } = require("../services/aws")
 const Op = Sequelize.Op
 
 exports.update = async (req,res) => {
@@ -68,7 +64,7 @@ exports.delete = async (req,res) => {
 }
 
 exports.create = async (req,res) => {
-    const {name,city,description,img_name,country,site_url} = req.body
+    const {name,city,description,img_name,site_url} = req.body
     const user_id = req.user.id
 
     try{
@@ -78,7 +74,6 @@ exports.create = async (req,res) => {
             city,
             description,
             img_name,
-            country,
             site_url,
             img_name:"company.jpg"
         })
@@ -211,8 +206,6 @@ exports.list = async (req,res) => {
     response = []
 
     let {page,name} = req.params
-
-    console.log(page);
 
     if(!page)
         page = 0
@@ -395,17 +388,11 @@ exports.upload = async (req,res)=> {
         if(company)
         {
 
-            const s3 = new aws.S3({
-                region:"eu-west-2",
-                accessKeyId:process.env.UPLOAD_AWS_KEY,
-                secretAccessKey:process.env.UPLOAD_AWS_PASS
-            })
-    
             if(company.img_name !== "company.jpg")
             {
                 try
                 {
-                    await s3.deleteObject({
+                    await S3.deleteObject({
                         Bucket:"app-avaliame",
                         Key:company.img_name
                     }).promise()

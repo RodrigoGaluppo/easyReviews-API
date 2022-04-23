@@ -17,9 +17,10 @@ module.exports = {
     },
     dialectOptions:{
         timezone:"Europe/Lisbon",
-        ssl: {
+        ssl: false
+        /*{
             rejectUnauthorized: false
-        }
+        }*/
     },
     timezone:"Europe/Lisbon"
 
